@@ -1,0 +1,89 @@
+<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".fragments.PeriodicTasksFragment">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Interval [s]"
+        android:layout_row="0"
+        android:layout_column="1" />
+
+    <CheckBox
+        android:id="@+id/cbAlarmSetrepeating"
+        android:layout_row="1" android:layout_column="0"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Alarm setRepeating" />
+
+    <EditText
+        android:id="@+id/etIntervalAlarmSetRepeating"
+        android:layout_row="1" android:layout_column="1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:ems="2" />
+
+    <CheckBox
+        android:id="@+id/cbAlarmSetAndAllowWhileIdle"
+        android:layout_row="2" android:layout_column="0"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="setAndAllowWhileIdle" />
+
+    <EditText
+        android:id="@+id/etIntervalAlarmSetAndAllowWhileIdle"
+        android:layout_row="2" android:layout_column="1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:ems="2" />
+
+    <CheckBox
+        android:id="@+id/cbHandlerMainthread"
+        android:layout_row="3" android:layout_column="0"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Handler on main thread" />
+
+    <EditText
+        android:id="@+id/etIntervalHandlerMainthread"
+        android:layout_row="3" android:layout_column="1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:ems="2" />
+
+    <CheckBox
+        android:id="@+id/cbHandlerBackgroundservice"
+        android:layout_row="4" android:layout_column="0"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Handler in background service" />
+
+    <EditText
+        android:id="@+id/etIntervalHandlerBackgroundservice"
+        android:layout_row="4" android:layout_column="1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:ems="2" />
+
+    <CheckBox
+        android:id="@+id/cbHandlerForegroundservice"
+        android:layout_row="5" android:layout_column="0"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Handler in foreground service" />
+
+    <EditText
+        android:id="@+id/etIntervalHandlerForegroundservice"
+        android:layout_row="5" android:layout_column="1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:ems="2" />
+</GridLayout>
