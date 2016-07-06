@@ -14,7 +14,6 @@ import com.google.android.gms.gcm.OneoffTask;
 import com.google.android.gms.gcm.Task;
 import com.google.android.gms.gcm.TaskParams;
 
-import de.leo.android.explore_doze.tests.TaskBase;
 import de.leo.android.explore_doze.util.LogActions;
 
 /**
@@ -30,7 +29,6 @@ public class NetworkConnectivityTest {
         @Override
         public boolean onStartJob(JobParameters jobParameters) {
             Log.i(MyJobSchedulerTask.class.getSimpleName(), "onStartJob");
-            TaskBase.getConnectionStatus(getApplicationContext());
             return false;
         }
 
@@ -58,7 +56,7 @@ public class NetworkConnectivityTest {
 
         @Override
         public int onRunTask(TaskParams taskParams) {
-            LogActions.logState(getApplicationContext(), LOG_TAG, "connectionStatus: " + TaskBase.getConnectionStatus(getApplicationContext()));
+            LogActions.logState(getApplicationContext(), LOG_TAG, "connectionStatus: ");
 
             return GcmNetworkManager.RESULT_SUCCESS;
         }

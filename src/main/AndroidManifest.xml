@@ -24,10 +24,15 @@
 
         <service android:name=".service.MonitorService" />
 
-        <service android:name=".tests.TaskHandlerInBackgroundService$HandlerService" />
-        <service android:name=".tests.TaskHandlerInForegroundService$HandlerService" />
         <receiver android:name=".tests.TaskAlarmReceiver$AlarmReceiver" />
         <receiver android:name=".tests.TaskAlarmReceiverAllowWhileIdle$AlarmReceiver" />
+
+        <service android:name=".tests.TaskHandlerInBackgroundService$HandlerService" />
+        <service android:name=".tests.TaskHandlerInForegroundService$HandlerService" />
+        <service android:name=".tests.TaskHandlerInForegroundService2$HandlerService" android:process=":Process1" />
+<!--
+        <service android:name=".tests.TaskHandlerInForegroundService2$HandlerService" android:process=":process2" />
+-->
 
         <service android:name=".NetworkConnectivityTest$MyJobSchedulerTask"
             android:permission="android.permission.BIND_JOB_SERVICE"

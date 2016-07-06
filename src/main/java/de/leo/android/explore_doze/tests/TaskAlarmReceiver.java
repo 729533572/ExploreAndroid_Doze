@@ -23,7 +23,7 @@ public class TaskAlarmReceiver extends TaskBase {
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            TaskBase.monitorState(context, TAG, intent.getLongExtra("interval", -1L), intent.getStringExtra("msg"));
+            LogActions.logState(context, TAG, intent.getLongExtra("interval", -1L), intent.getStringExtra("msg"));
         }
     }
 

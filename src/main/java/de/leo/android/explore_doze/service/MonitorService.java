@@ -13,9 +13,9 @@ import android.support.annotation.Nullable;
 import de.leo.android.explore_doze.util.LogActions;
 
 /**
- * Service to keep a broadcast receiver running when the app is not active
+ * Service to keep a broadcast receiver for configuration changes running when the app is not active
  *
- * Created by leo on 04.07.16.
+ * Created by Matthias Leonhardt on 04.07.16.
  */
 public class MonitorService extends Service {
     private static final String TAG =  MonitorService.class.getSimpleName();
@@ -25,6 +25,14 @@ public class MonitorService extends Service {
 
         @Override
         public void onReceive(Context context, Intent intent) {
+/*              // Enumerate the properties of the intent in order to identify potentially useful information
+            Log.i(TAG, "getData:" + (intent.getData() == null ? "null" : intent.getData().toString()));
+            Bundle extras = intent.getExtras();
+            if (extras == null) Log.i(TAG, "No extras");
+            else
+                for (String key : extras.keySet())
+                    Log.i(TAG, "extras (" + key + "): " + extras.get(key).toString());
+/**/
             LogActions.logState(context, TAG, intent.getAction());
         }
     }

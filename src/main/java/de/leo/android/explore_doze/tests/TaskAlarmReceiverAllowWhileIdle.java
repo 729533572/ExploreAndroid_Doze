@@ -22,7 +22,7 @@ public class TaskAlarmReceiverAllowWhileIdle extends TaskBase {
         @Override
         public void onReceive(Context context, Intent intent) {
             long interval = intent.getLongExtra("interval", -1L);
-            TaskBase.monitorState(context, TAG, interval, intent.getStringExtra("msg") + interval);
+            LogActions.logState(context, TAG, interval, intent.getStringExtra("msg") + interval);
 
             PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
 

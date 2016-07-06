@@ -20,6 +20,7 @@ import de.leo.android.explore_doze.tests.TaskAlarmReceiver;
 import de.leo.android.explore_doze.tests.TaskAlarmReceiverAllowWhileIdle;
 import de.leo.android.explore_doze.tests.TaskHandlerInBackgroundService;
 import de.leo.android.explore_doze.tests.TaskHandlerInForegroundService;
+import de.leo.android.explore_doze.tests.TaskHandlerInForegroundService2;
 import de.leo.android.explore_doze.tests.TaskHandlerOnMainThread;
 
 /**
@@ -31,18 +32,21 @@ public class PeriodicTasksFragment extends Fragment {
     private CheckBox cbAlarmSetAndAllowWhileIdle;
     private CheckBox cbHandlerBackgroundservice;
     private CheckBox cbHandlerForegroundservice;
+    private CheckBox cbHandlerForegroundserviceOwnProcess;
     private CheckBox cbHandlerMainthread;
-    private TaskHandlerInForegroundService.HandlerService service1;
-    private TaskHandlerInBackgroundService.HandlerService service2;
-
+    private TaskHandlerInBackgroundService.HandlerService service1;
+    private TaskHandlerInForegroundService.HandlerService service2;
+/* TODO: Does not work with services in different processes
+    private TaskHandlerInForegroundService2.HandlerService service3;
+*/
     private boolean isServicing = false;
 
     private ServiceConnection connection1 = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            TaskHandlerInForegroundService.HandlerService.HandlerServiceBinder b = (TaskHandlerInForegroundService.HandlerService.HandlerServiceBinder) iBinder;
+            TaskHandlerInBackgroundService.HandlerService.HandlerServiceBinder b = (TaskHandlerInBackgroundService.HandlerService.HandlerServiceBinder) iBinder;
             service1 = b.getService();
-            cbHandlerForegroundservice.setChecked(service1.isRunning());
+            cbHandlerBackgroundservice.setChecked(service1.isRunning());
             getActivity().unbindService(this);
         }
 
@@ -55,9 +59,9 @@ public class PeriodicTasksFragment extends Fragment {
     private ServiceConnection connection2 = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            TaskHandlerInBackgroundService.HandlerService.HandlerServiceBinder b = (TaskHandlerInBackgroundService.HandlerService.HandlerServiceBinder) iBinder;
+            TaskHandlerInForegroundService.HandlerService.HandlerServiceBinder b = (TaskHandlerInForegroundService.HandlerService.HandlerServiceBinder) iBinder;
             service2 = b.getService();
-            cbHandlerBackgroundservice.setChecked(service2.isRunning());
+            cbHandlerForegroundservice.setChecked(service2.isRunning());
             getActivity().unbindService(this);
         }
 
@@ -67,6 +71,22 @@ public class PeriodicTasksFragment extends Fragment {
         }
     };
 
+/* TODO: Does not work with services in different processes
+    private ServiceConnection connection3 = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            TaskHandlerInForegroundService2.HandlerService.HandlerServiceBinder b = (TaskHandlerInForegroundService2.HandlerService.HandlerServiceBinder) iBinder;
+            service3 = b.getService();
+            cbHandlerForegroundserviceOwnProcess.setChecked(service3.isRunning());
+            getActivity().unbindService(this);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            service3 = null;
+        }
+    };
+*/
 
     public PeriodicTasksFragment() {
         // Required empty public constructor
@@ -83,9 +103,8 @@ public class PeriodicTasksFragment extends Fragment {
         ((EditText)v.findViewById(R.id.etIntervalAlarmSetAndAllowWhileIdle)).setText("60");
         ((EditText)v.findViewById(R.id.etIntervalHandlerBackgroundservice)).setText("10");
         ((EditText)v.findViewById(R.id.etIntervalHandlerForegroundservice)).setText("10");
+        ((EditText)v.findViewById(R.id.etIntervalHandlerForegroundserviceOwnProcess)).setText("10");
         ((EditText)v.findViewById(R.id.etIntervalHandlerMainthread)).setText("10");
-
-        CheckBox cb;
 
         cbAlarmSetrepeating = (CheckBox)v.findViewById(R.id.cbAlarmSetrepeating);
         cbAlarmSetrepeating.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -148,6 +167,21 @@ public class PeriodicTasksFragment extends Fragment {
             }
         });
 
+        cbHandlerForegroundserviceOwnProcess = (CheckBox)v.findViewById(R.id.cbHandlerForegroundserviceOwnProcess);
+        cbHandlerForegroundserviceOwnProcess.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                if (isServicing) {
+                    TaskHandlerInForegroundService2 task = new TaskHandlerInForegroundService2();
+
+                    if (isChecked)
+                        task.startTask(getContext(), true, Long.parseLong(((EditText) v.findViewById(R.id.etIntervalHandlerForegroundserviceOwnProcess)).getText().toString()) * 1000L);
+                    else
+                        task.startTask(getContext(), false, -1);
+                }
+            }
+        });
+
         cbHandlerMainthread = (CheckBox)v.findViewById(R.id.cbHandlerMainthread);
         cbHandlerMainthread.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -169,8 +203,6 @@ public class PeriodicTasksFragment extends Fragment {
     @Override
     public void onPause() {
         isServicing = false;
-//        getActivity().unbindService(connection1);
-//        getActivity().unbindService(connection2);
 
         super.onPause();
     }
@@ -179,16 +211,19 @@ public class PeriodicTasksFragment extends Fragment {
     public void onResume() {
         super.onResume();
 
-        Intent intent = new Intent(getContext(), TaskHandlerInForegroundService.HandlerService.class);
+        Intent intent = new Intent(getContext(), TaskHandlerInBackgroundService.HandlerService.class);
         getActivity().bindService(intent, connection1, Context.BIND_AUTO_CREATE);
 
-        intent = new Intent(getContext(), TaskHandlerInBackgroundService.HandlerService.class);
+        intent = new Intent(getContext(), TaskHandlerInForegroundService.HandlerService.class);
         getActivity().bindService(intent, connection2, Context.BIND_AUTO_CREATE);
 
+/* TODO: Does not work with services in different processes
+        intent = new Intent(getContext(), TaskHandlerInForegroundService2.HandlerService.class);
+        getActivity().bindService(intent, connection3, Context.BIND_AUTO_CREATE);
+*/
         cbAlarmSetrepeating.setChecked(TaskAlarmReceiver.isRunning(getContext()));
         cbAlarmSetAndAllowWhileIdle.setChecked(TaskAlarmReceiverAllowWhileIdle.isRunning(getContext()));
         cbHandlerMainthread.setChecked(TaskHandlerOnMainThread.isRunning());
-
 
         isServicing = true;
     }

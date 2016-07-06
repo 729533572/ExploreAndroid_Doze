@@ -8,8 +8,8 @@ android {
         applicationId "de.leo.android.explore_doze"
         minSdkVersion 23
         targetSdkVersion 24
-        versionCode 1
-        versionName "1.0"
+        versionCode 101
+        versionName "0.1.0"
     }
     buildTypes {
         release {

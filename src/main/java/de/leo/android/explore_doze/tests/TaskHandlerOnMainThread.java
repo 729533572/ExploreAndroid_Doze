@@ -9,7 +9,7 @@ import de.leo.android.explore_doze.util.LogActions;
  * Created by leo on 28.06.16.
  */
 public class TaskHandlerOnMainThread extends TaskBase {
-    private static final String TAG = "HandlerOnMainThread.postdelayed";
+    private static final String TAG = TaskHandlerOnMainThread.class.getSimpleName();
 
     private static Handler handler = null;
     private static Runnable task;

@@ -12,8 +12,17 @@ import android.os.PowerManager;
 import android.util.Log;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
+
+import de.leo.android.explore_doze.service.MonitorService;
+import de.leo.android.explore_doze.tests.TaskAlarmReceiver;
+import de.leo.android.explore_doze.tests.TaskAlarmReceiverAllowWhileIdle;
+import de.leo.android.explore_doze.tests.TaskHandlerInBackgroundService;
+import de.leo.android.explore_doze.tests.TaskHandlerInForegroundService;
+import de.leo.android.explore_doze.tests.TaskHandlerInForegroundService2;
+import de.leo.android.explore_doze.tests.TaskHandlerOnMainThread;
 
 /**
  * Log various properties of the current system state
@@ -24,10 +33,8 @@ public class LogActions extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "LogActions.db";
     private static final int DATABASE_VERSION = 1;
 
-    private final static String NTP_SERVER = "192.168.84.1";
+    private final static String NTP_SERVER = "192.168.84.1";    // Private NTP-Server - please dont spam public NTP-Servers with this
     private final static int NTP_TIMEOUT = 10000;
-
-    private static final SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
 
     public static final String TBL_EVENTS = "events";
     public static final String COL_EVENTS_CONNECTED = "isconnected";
@@ -46,7 +53,12 @@ public class LogActions extends SQLiteOpenHelper {
 
 
     public LogActions(Context context) {
-        super(context, Environment.getExternalStorageDirectory() + "/" + DATABASE_NAME, null, DATABASE_VERSION);
+        this(context, null);
+    }
+
+
+    public LogActions(Context context, String filename) {
+        super(context, filename == null ? Environment.getExternalStorageDirectory() + "/" + DATABASE_NAME : filename, null, DATABASE_VERSION);
     }
 
 
@@ -83,6 +95,9 @@ public class LogActions extends SQLiteOpenHelper {
     }
 
 
+    /**
+     * Record the current state of the device to the database
+     */
     public static void logState(Context context, String tag, long interval, String msg) {
         final SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yy HH:mm:ss", Locale.GERMAN);
         final long time = System.currentTimeMillis();
@@ -99,7 +114,6 @@ public class LogActions extends SQLiteOpenHelper {
         v.put(COL_EVENTS_TIME_STR, sdf.format(time));
         v.put(COL_EVENTS_TAG, tag);
         v.put(COL_EVENTS_DELTA, time - lastEvent);
-        v.put(COL_EVENTS_MSG, msg);
 
         if (interval >= 0) v.put(COL_EVENTS_INTERVAL, interval);
 
@@ -107,8 +121,6 @@ public class LogActions extends SQLiteOpenHelper {
         v.put(COL_EVENTS_IDLE, pm.isDeviceIdleMode());
 //TODO:     v.put(COL_EVENTS_LIGHT_IDLE, pm.isLightDeviceIdleMode());   //Hat angeblich @Hide Annotation -> https://code.google.com/p/android/issues/detail?id=211639
         v.put(COL_EVENTS_INTERACTIVE, pm.isInteractive());
-
-        // pm.reboot("Test");  //Reqiures REBOOT permission
 
         ConnectivityManager cm = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
@@ -139,57 +151,98 @@ public class LogActions extends SQLiteOpenHelper {
 
             // Check Network Connectivity
             SntpClient client = new SntpClient();
-            if (client.requestTime(NTP_SERVER, NTP_TIMEOUT))
-                v.put(COL_EVENTS_NTP_DELTA, client.getNtpTime()-System.currentTimeMillis());
+            if (client.requestTime(NTP_SERVER, NTP_TIMEOUT)) {
+                long time1 = client.getNtpTime();
+                long time2 = System.currentTimeMillis();
+                v.put(COL_EVENTS_NTP_DELTA, time1 - time2);
+                msg += String.format(Locale.getDefault(), ", NTP-Time %d, delta %d", time1, time1 - time2);
+            }
         }
 
+        v.put(COL_EVENTS_MSG, msg);
 
         db.insert(LogActions.TBL_EVENTS, null, v);
         db.close();
 
-        Log.i(tag, (time - lastEvent) + " " + msg);
+        Log.d(tag, (time - lastEvent) + " " + msg);
     }
 
 
-    public static String checkEvents(Context context) {
-        StringBuilder result = new StringBuilder();
+    /**
+     * Check the recorded events
+     */
+    public static String checkEvents(Context context, String filename) {
+        ArrayList<String> messages = new ArrayList<>();
 
         HashMap<String, Watchdog> watchdogs = new HashMap<>();
 
-        LogActions la = new LogActions(context);
+        DeviceState deviceState = new DeviceState();
+
+        LogActions la = new LogActions(context, filename);
         SQLiteDatabase db = la.getWritableDatabase();
 
-        Cursor c = db.query(TBL_EVENTS, null, null, null, null, null, COL_EVENTS_TIME + ", " + COL_EVENTS_TAG);
-        assert  c != null;
-        int colTime = c.getColumnIndexOrThrow(COL_EVENTS_TIME);
-        int colTag  = c.getColumnIndexOrThrow(COL_EVENTS_TAG);
-        int colInterval = c.getColumnIndexOrThrow(COL_EVENTS_INTERVAL);
+        Cursor events = db.query(TBL_EVENTS, null, null, null, null, null, COL_EVENTS_TIME + ", " + COL_EVENTS_TAG);
+        assert events != null;
+        int colTime = events.getColumnIndexOrThrow(COL_EVENTS_TIME);
+        int colTag = events.getColumnIndexOrThrow(COL_EVENTS_TAG);
+        int colInterval = events.getColumnIndexOrThrow(COL_EVENTS_INTERVAL);
 
-        result.append("Start checking events.\n");
+        messages.add("Start checking events.\n");
 
         String tag;
         long time;
         int interval;
-        while (c.moveToNext()) {
-            time = c.getLong(colTime);
-            tag = c.getString(colTag);
+        while (events.moveToNext()) {
+            deviceState.updateState(events, messages);
 
-            if (!c.isNull(colInterval)) {
-                interval = c.getInt(colInterval);
-                if (interval > 0 && !watchdogs.containsKey(tag))
-                    watchdogs.put(tag, new Watchdog(tag, interval, time));
+            time = events.getLong(colTime);
+            tag = events.getString(colTag);
+            interval = events.getInt(colInterval);
+
+            if (tag.equals(TaskHandlerOnMainThread.class.getSimpleName())
+                    || tag.equals("HandlerOnMainThread.postdelayed")
+                    || tag.equals(TaskHandlerInBackgroundService.class.getSimpleName())
+                    || tag.equals(TaskHandlerInForegroundService.class.getSimpleName())
+                    || tag.equals(TaskHandlerInForegroundService2.class.getSimpleName())) {
+                if (!watchdogs.containsKey(tag) && interval > 0)
+                    watchdogs.put(tag, new Watchdog(tag, interval, 10000, time));
+
+            } else if (tag.equals(TaskAlarmReceiver.class.getSimpleName())
+                    || tag.equals(TaskAlarmReceiverAllowWhileIdle.class.getSimpleName())) {
+                if (interval > 0 && !watchdogs.containsKey(tag)) {
+                    if (interval < 10000) interval = 10000;     // Current minimum, enforced by Ggoogle
+                    watchdogs.put(tag, new Watchdog(tag, interval, 60000, time));
+                }
+
+            } else if (tag.equals(MonitorService.class.getSimpleName())) {
+                // Nothing to do - already consumed by deviceState.updateState()
+
+            } else {
+                messages.add(messageString(events, "Unknown tag " + tag + " encountered"));
             }
 
-            if (c.getInt(c.getColumnIndexOrThrow(COL_EVENTS_CONNECTED)) == 1 && c.isNull(c.getColumnIndexOrThrow(COL_EVENTS_NTP_DELTA)))
-                result.append(tag + " " + sdf.format(c.getLong(c.getColumnIndexOrThrow(COL_EVENTS_TIME))) + " Network error\n");
-
             for (Watchdog watchdog : watchdogs.values())
-                watchdog.check(tag, time, result);
+                watchdog.check(tag, time, deviceState, messages);
         }
-        c.close();
+        events.close();
 
-        result.append("Finished checking events.\n");
+        messages.add("Finished checking events.");
+
+        return messages.toString();
+    }
+/*
+        StringBuilder result = new StringBuilder();
+        for (String msg : messages) result.append(msg);
 
         return result.toString();
+    }
+*/
+
+    public static String messageString(Cursor event, String msg) {
+        return messageString(event.getLong(event.getColumnIndexOrThrow(LogActions.COL_EVENTS_TIME)), event.getString(event.getColumnIndexOrThrow(LogActions.COL_EVENTS_TAG)), msg);
+    }
+
+    public static String messageString(Long time, String tag, String msg) {
+        return String.format("%s %s %s\n", new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(time), tag, msg);
     }
 }

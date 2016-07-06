@@ -10,18 +10,18 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 
-import de.leo.android.explore_doze.util.LogActions;
 import de.leo.android.explore_doze.MainActivity;
 import de.leo.android.explore_doze.R;
+import de.leo.android.explore_doze.util.LogActions;
 
 /**
  * Test behaviour of a handler with a runnable rescheduled with postdelay in a service.
  *
  * Created by Matthias Leonhardt on 28.06.16.
  */
-public class TaskHandlerInForegroundService extends TaskBase {
-    private static final int ONGOING_NOTIFICATION_ID = 1;
-    private static final String TAG = TaskHandlerInForegroundService.class.getSimpleName();
+public class TaskHandlerInForegroundService2 extends TaskBase {
+    private static final int ONGOING_NOTIFICATION_ID = 2;
+    private static final String TAG = TaskHandlerInForegroundService2.class.getSimpleName();
 
 
     public void startTask(Context context, boolean startAction, long interval) {

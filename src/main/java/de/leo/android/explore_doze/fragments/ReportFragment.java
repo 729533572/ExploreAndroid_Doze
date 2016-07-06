@@ -25,8 +25,7 @@ public class ReportFragment extends Fragment {
     private TextView tvResult;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_report, container, false);
 
@@ -36,7 +35,7 @@ public class ReportFragment extends Fragment {
         b.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                tvResult.setText(LogActions.checkEvents(getContext()));
+                tvResult.setText(LogActions.checkEvents(getContext(), null));
             }
         });
         return v;
